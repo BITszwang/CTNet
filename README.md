@@ -19,11 +19,11 @@ cd codes
 ```
 
 ## Dataset
-We used the UCMerced dataset for both training and test. Please first download the dataset via [Baidu Drive (key:912V)](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) 
+We used the UCMerced dataset for both training and test. Please first download the dataset via [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V). 
 
 ## Train
-```
 The train/val data pathes are set in [data/__init__.py](codes/data/__init__.py) 
+```
 # x4
 python demo_train_ctnet.py --model=CTNET --dataset=UCMerced --scale=4 --patch_size=192 --ext=img --save=CTNETx4_UCMerced
 # x3
@@ -35,7 +35,7 @@ python demo_train_ctnet.py --model=CTNET --dataset=UCMerced --scale=2 --patch_si
 
 
 ## Test 
-The test data path and the save path can be edited in [demo_deploy.py](codes/demo_deploy.py)
+The test data path and the save path can be edited in [demo_deploy.py](codes/demo_deploy_ctnet.py)
 
 ```
 # x4
