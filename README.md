@@ -35,7 +35,7 @@ python demo_train_ctnet.py --model=CTNET --dataset=UCMerced --scale=2 --patch_si
 
 
 ## Test 
-The test data path and the save path can be edited in [demo_deploy.py](codes/demo_deploy_ctnet.py)
+The test data path and the save path can be edited in [demo_deploy_ctnet.py](codes/demo_deploy_ctnet.py)
 
 ```
 # x4
