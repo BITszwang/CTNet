@@ -1,5 +1,3 @@
-# from option import args
-
 from ctnet_option import args
 import data
 import model

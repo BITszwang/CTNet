@@ -1,11 +1,5 @@
 from ctnet_option import args
 
-# from ctnetB8_option import args
-
-# from ctnetB32_option import args
-# from ctnetF32_option import args
-# from ctnetF96_option import args
-# from ctnetF128_option import args
 import model
 import utils
 import data.common as common
@@ -100,96 +94,11 @@ if __name__ == '__main__':
 
     # args parameter setting
     # UCMerced data
-    # x4
 
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETCCA_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETCCA_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETSE_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETSE_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCFT_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCFT_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETCTL1x4_0925_UCMerced/model/model_latest.pt'
-    # args.dir_out = '../experiment/results/CTNETCTL1_0925_latest_x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCFE_0925_UCMerced/model/model_latest.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCFE_0925_latest_x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCTB_UCMerced/model/model_latest.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCTB_latest_x4_UCMerced'
-
-    args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    args.pre_train = '../experiment/CTNETWOCFT_0925_UCMerced/model/model_latest.pt'
-    args.dir_out = '../experiment/results/CTNETWOCFT_0925_latest_x4_UCMerced'
-
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETCTL3x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETCTL3x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETCTL4x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETCTL4x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETK3R4x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETK3R4x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETK3R8x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETK3R8x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETK5R2x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETK5R2x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWORCx4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETWORCx4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCFEx4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCFEx4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCFAx4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCFAx4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETWOCEMx4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETWOCEMx4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETB8x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETB8x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETB32x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETB32x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNET_32x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNET_32x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNET_96x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNET_96x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNET_128x4_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNET_128x4_UCMerced'
-
-    # args.dir_data = '/media/wsz/FAB9B702EAEE0235/szwang/dataset/UCMerced_LandUse/split-train-val/val/LR_x4'
-    # args.pre_train = '../experiment/CTNETx4_2000_UCMerced/model/model_best.pt'
-    # args.dir_out = '../experiment/results/CTNETx4_2000_UCMerced'
+    # # x4
+    # args.pre_train = '../experiment/CTNETx4_UCMerced/model/model_best.pt'
+    # args.dir_data = '/raid/Research/dataset/rsisr/UCMerced_LandUse/split-train-val/val/LR_x4'
+    # args.dir_out = '../experiment/results/CTNETx4_UCMerced'
 
     # # x3
     # args.pre_train = '../experiment/CTNETx3_UCMerced/model/model_best.pt'

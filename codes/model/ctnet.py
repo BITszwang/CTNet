@@ -8,9 +8,9 @@ import torch.nn.functional as F
 def make_model(args, parent=False):
     return CTNET(in_nc=args.in_nc, out_nc=args.out_nc, nf=args.nf, unf=args.unf, nb=args.nb, scale=args.scale[0])
 
-class ESA(nn.Module):
+class CEM(nn.Module):
     def __init__(self, n_feats):
-        super(ESA, self).__init__()
+        super(CEM, self).__init__()
         f = n_feats // 4
         self.conv1 = nn.Conv2d(n_feats, f, kernel_size=1)
         self.conv_f = nn.Conv2d(f, f, kernel_size=1)
@@ -37,9 +37,9 @@ class ESA(nn.Module):
         return x * m
 
 
-class SCConv(nn.Module):
+class CFE(nn.Module):
     def __init__(self, inplanes, planes, stride, padding, dilation, groups, pooling_r):
-        super(SCConv, self).__init__()
+        super(CFE, self).__init__()
 
         self.k1 = nn.Sequential(
             nn.Conv2d(inplanes, planes, kernel_size=1, stride=1,
@@ -68,8 +68,8 @@ class SCConv(nn.Module):
         identity = self.k1(x)
 
         out = torch.sigmoid(torch.add(identity, F.interpolate(self.k2(x), identity.size()[2:]))) # sigmoid(identity + k2)
-        out = torch.mul(identity, out) # k3 * sigmoid(identity + k2)
-        # out = self.k4(out) # k4
+        out = torch.mul(identity, out)
+
 
         return out
 
@@ -116,7 +116,7 @@ def hard_sigmoid(x, inplace: bool = False):
         return F.relu6(x + 3.) / 6.
 
 
-## 20201122 new added  to evaluate the effectiveness of CCA layer
+
 
 def mean_channels(F):
     assert(F.dim() == 4)
@@ -128,6 +128,9 @@ def stdv_channels(F):
     F_mean = mean_channels(F)
     F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (F.size(2) * F.size(3))
     return F_variance.pow(0.5)
+
+
+
 
 class CCALayer(nn.Module):
     def __init__(self, channel, reduction=16):
@@ -185,58 +188,52 @@ class SqueezeExcite(nn.Module):
         return x
 
 
-class GhostModule(nn.Module):
+class CTL(nn.Module):
     def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):
-        super(GhostModule, self).__init__()
+        super(CTL, self).__init__()
         self.oup = oup
         init_channels = math.ceil(oup / ratio)
         new_channels = init_channels * (ratio - 1)
 
 
-        #1204 pool_r =2
-        #1209 pool_r =3
-
-        self.primary_conv = nn.Sequential(
-            SCConv(inplanes=inp, planes=init_channels, stride=stride, padding=1, dilation=1, groups=1, pooling_r=2),
-            # nn.BatchNorm2d(init_channels),
+        self.cfe = nn.Sequential(
+            CFE(inplanes=inp, planes=init_channels, stride=stride, padding=1, dilation=1, groups=1, pooling_r=2),
             nn.ReLU(inplace=True) if relu else nn.Sequential(),
         )
 
-        self.cheap_operation = nn.Sequential(
+        self.cft = nn.Sequential(
             nn.Conv2d(init_channels, new_channels, dw_size, 1, dw_size // 2, groups=init_channels, bias=False),
-            # nn.BatchNorm2d(new_channels),
             nn.ReLU(inplace=True) if relu else nn.Sequential(),
         )
 
 
-        self.detail_improve = nn.Sequential(
+        self.feat_enhanced = nn.Sequential(
             nn.Conv2d(inp, init_channels+new_channels, 1, stride, 0, bias=False),
-            # nn.BatchNorm2d(init_channels),
             nn.ReLU(inplace=True) if relu else nn.Sequential(),
         )
 
 
     def forward(self, x):
-        x1 = self.primary_conv(x)
-        x2 = self.cheap_operation(x1)
-        x_imporved = self.detail_improve(x)
+        x1 = self.cfe(x)
+        x2 = self.cft(x1)
+        x_enhanced = self.feat_enhanced(x)
         out = torch.cat([x1, x2], dim=1)
-        out = out + x_imporved
+        out = out + x_enhanced
 
         return out[:, :self.oup, :, :]
 
 
-class GhostBottleneck(nn.Module):
+class CTB(nn.Module):
     """ Ghost bottleneck w/ optional SE"""
 
     def __init__(self, in_chs, mid_chs, out_chs, dw_kernel_size=3,
                  stride=1, se_ratio=0.):
-        super(GhostBottleneck, self).__init__()
+        super(CTB, self).__init__()
         has_se = se_ratio is not None and se_ratio > 0.
         self.stride = stride
 
         # Point-wise expansion
-        self.ghost1 = GhostModule(in_chs, mid_chs, relu=True)
+        self.ctl1 = CTL(in_chs, mid_chs, relu=True)
 
         # Depth-wise convolution
         if self.stride > 1:
@@ -252,7 +249,7 @@ class GhostBottleneck(nn.Module):
             self.se = None
 
         # Point-wise linear projection
-        self.ghost2 = GhostModule(mid_chs, out_chs, relu=False)
+        self.ctl2 = CTL(mid_chs, out_chs, relu=False)
 
         # shortcut
         if (in_chs == out_chs and self.stride == 1):
@@ -268,22 +265,16 @@ class GhostBottleneck(nn.Module):
 
     def forward(self, x):
         residual = x
+        x = self.ctl1(x)
 
-        # 1st ghost bottleneck
-        x = self.ghost1(x)
-
-        # Depth-wise convolution
         if self.stride > 1:
             x = self.conv_dw(x)
             x = self.bn_dw(x)
 
-        # Squeeze-and-excitation
         if self.se is not None:
             x = self.se(x)
 
-        # 2nd ghost bottleneck
-        x = self.ghost2(x)
-
+        x = self.ctl2(x)
         x += self.shortcut(residual)
         return x
 
@@ -297,69 +288,69 @@ class CTNET(nn.Module):
         ### first convolution
         self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
 
-        self.delayer1 = ESA(nf)
-        self.ghost1 = GhostBottleneck(in_chs=nf, mid_chs=nf//2, out_chs=nf)
-        self.alt1 = nn.Conv2d(nf, nf//nb, 3, 1, 3 // 2, groups=nf//nb, bias=False)
 
-        self.delayer2 = ESA(nf)
-        self.ghost2 = GhostBottleneck(in_chs=nf, mid_chs=nf//2, out_chs=nf)
-        self.alt2 = nn.Conv2d(nf, nf//nb, 3, 1, 3 // 2, groups=nf//nb, bias=False)
+        self.ctb1 = CTB(in_chs=nf, mid_chs=nf//2, out_chs=nf)
+        self.cfa1 = nn.Conv2d(nf, nf//nb, 3, 1, 3 // 2, groups=nf//nb, bias=False)
 
-        self.delayer3 = ESA(nf)
-        self.ghost3 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt3 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem2 = CEM(nf)
+        self.ctb2 = CTB(in_chs=nf, mid_chs=nf//2, out_chs=nf)
+        self.cfa2 = nn.Conv2d(nf, nf//nb, 3, 1, 3 // 2, groups=nf//nb, bias=False)
 
-        self.delayer4 = ESA(nf)
-        self.ghost4 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt4 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem3 = CEM(nf)
+        self.ctb3 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa3 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer5 = ESA(nf)
-        self.ghost5 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt5 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem4 = CEM(nf)
+        self.ctb4 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa4 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer6 = ESA(nf)
-        self.ghost6 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt6 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem5 = CEM(nf)
+        self.ctb5 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa5 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer7 = ESA(nf)
-        self.ghost7 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt7 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem6 = CEM(nf)
+        self.ctb6 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa6 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer8 = ESA(nf)
-        self.ghost8 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt8 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem7 = CEM(nf)
+        self.ctb7 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa7 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer9 = ESA(nf)
-        self.ghost9 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt9 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem8 = CEM(nf)
+        self.ctb8 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa8 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer10 = ESA(nf)
-        self.ghost10 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt10 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem9 = CEM(nf)
+        self.ctb9 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa9 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer11 = ESA(nf)
-        self.ghost11 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt11 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem10 = CEM(nf)
+        self.ctb10 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa10 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer12 = ESA(nf)
-        self.ghost12 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt12 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem11 = CEM(nf)
+        self.ctb11 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa11 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer13 = ESA(nf)
-        self.ghost13 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt13 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem12 = CEM(nf)
+        self.ctb12 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa12 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer14 = ESA(nf)
-        self.ghost14 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt14 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem13 = CEM(nf)
+        self.ctb13 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa13 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer15 = ESA(nf)
-        self.ghost15 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt15 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem14 = CEM(nf)
+        self.ctb14 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa14 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
-        self.delayer16 = ESA(nf)
-        self.ghost16 = GhostBottleneck(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
-        self.alt16 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+        self.cem15 = CEM(nf)
+        self.ctb15 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa15 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
+
+        self.cem16 = CEM(nf)
+        self.ctb16 = CTB(in_chs=nf, mid_chs=nf // 2, out_chs=nf)
+        self.cfa16 = nn.Conv2d(nf, nf // nb, 3, 1, 3 // 2, groups=nf // nb, bias=False)
 
 
         #### upsampling
@@ -381,71 +372,70 @@ class CTNET(nn.Module):
 
         fea = self.conv_first(x)
 
-        # fea = self.delayer1(fea)
-        out_b1 = self.ghost1(fea)
-        skip1 = self.alt1(out_b1)
 
-        out_b1 = self.delayer2(out_b1)
-        out_b2 = self.ghost2(out_b1)
-        skip2 = self.alt2(out_b2)
+        out_b1 = self.ctb1(fea)
+        skip1 = self.cfa1(out_b1)
 
-        out_b2 = self.delayer3(out_b2)
-        out_b3 = self.ghost3(out_b2)
-        skip3 = self.alt3(out_b3)
+        out_b1 = self.cem2(out_b1)
+        out_b2 = self.ctb2(out_b1)
+        skip2 = self.cfa2(out_b2)
 
-        out_b3 = self.delayer4(out_b3)
-        out_b4 = self.ghost4(out_b3)
-        skip4 = self.alt4(out_b4)
+        out_b2 = self.cem3(out_b2)
+        out_b3 = self.ctb3(out_b2)
+        skip3 = self.cfa3(out_b3)
 
-        out_b4 = self.delayer5(out_b4)
-        out_b5 = self.ghost5(out_b4)
-        skip5 = self.alt5(out_b5)
+        out_b3 = self.cem4(out_b3)
+        out_b4 = self.ctb4(out_b3)
+        skip4 = self.cfa4(out_b4)
 
-        out_b5 = self.delayer6(out_b5)
-        out_b6 = self.ghost6(out_b5)
-        skip6 = self.alt6(out_b6)
+        out_b4 = self.cem5(out_b4)
+        out_b5 = self.ctb5(out_b4)
+        skip5 = self.cfa5(out_b5)
+
+        out_b5 = self.cem6(out_b5)
+        out_b6 = self.ctb6(out_b5)
+        skip6 = self.cfa6(out_b6)
+
+        out_b6 = self.cem7(out_b6)
+        out_b7 = self.ctb7(out_b6)
+        skip7 = self.cfa7(out_b7)
+
+        out_b7 = self.cem8(out_b7)
+        out_b8 = self.ctb8(out_b7)
+        skip8 = self.cfa8(out_b8)
+
+        out_b8 = self.cem9(out_b8)
+        out_b9 = self.ctb9(out_b8)
+        skip9 = self.cfa9(out_b9)
+
+        out_b9 = self.cem10(out_b9)
+        out_b10 = self.ctb10(out_b9)
+        skip10 = self.cfa10(out_b10)
+
+        out_b10 = self.cem11(out_b10)
+        out_b11= self.ctb11(out_b10)
+        skip11 = self.cfa11(out_b11)
+
+        out_b11 = self.cem12(out_b11)
+        out_b12 = self.ctb12(out_b11)
+        skip12 = self.cfa12(out_b12)
+
+        out_b12 = self.cem13(out_b12)
+        out_b13 = self.ctb13(out_b12)
+        skip13 = self.cfa13(out_b13)
 
 
-        out_b6 = self.delayer7(out_b6)
-        out_b7 = self.ghost7(out_b6)
-        skip7 = self.alt7(out_b7)
+        out_b13 = self.cem14(out_b13)
+        out_b14 = self.ctb14(out_b13)
+        skip14 = self.cfa14(out_b14)
 
-        out_b7 = self.delayer8(out_b7)
-        out_b8 = self.ghost8(out_b7)
-        skip8 = self.alt8(out_b8)
+        out_b14 = self.cem15(out_b14)
+        out_b15 = self.ctb15(out_b14)
+        skip15 = self.cfa15(out_b15)
 
-        out_b8 = self.delayer9(out_b8)
-        out_b9 = self.ghost9(out_b8)
-        skip9 = self.alt9(out_b9)
-
-        out_b9 = self.delayer10(out_b9)
-        out_b10 = self.ghost10(out_b9)
-        skip10 = self.alt10(out_b10)
-
-        out_b10 = self.delayer11(out_b10)
-        out_b11= self.ghost11(out_b10)
-        skip11 = self.alt11(out_b11)
-
-        out_b11 = self.delayer12(out_b11)
-        out_b12 = self.ghost12(out_b11)
-        skip12 = self.alt12(out_b12)
-
-        out_b12 = self.delayer13(out_b12)
-        out_b13 = self.ghost13(out_b12)
-        skip13 = self.alt13(out_b13)
-
-
-        out_b13 = self.delayer14(out_b13)
-        out_b14 = self.ghost14(out_b13)
-        skip14 = self.alt14(out_b14)
-
-        out_b14 = self.delayer15(out_b14)
-        out_b15 = self.ghost15(out_b14)
-        skip15 = self.alt15(out_b15)
-
-        out_b15 = self.delayer16(out_b15)
-        out_b16 = self.ghost16(out_b15)
-        skip16 = self.alt16(out_b16)
+        out_b15 = self.cem16(out_b15)
+        out_b16 = self.ctb16(out_b15)
+        skip16 = self.cfa16(out_b16)
 
         trunk = self.c(torch.cat((skip1,skip2,skip3,skip4,skip5,skip6,skip7,skip8,skip9,skip10,skip11,skip12,skip13,skip14,skip15,skip16),dim=1))
 

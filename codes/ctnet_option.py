@@ -74,7 +74,7 @@ parser.add_argument('--precision', type=str, default='single',
                     choices=('single', 'half'),
                     help='FP precision for test (single | half)')
 
-
+# CTNET Config
 parser.add_argument('--in_nc', type=int, default=3,
                     help='number of input channel')
 parser.add_argument('--out_nc', type=int, default=3,
