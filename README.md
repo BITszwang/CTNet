@@ -19,7 +19,7 @@ cd codes
 ```
 
 ## Dataset
-We used the UCMerced dataset for both training and test. Please first download the dataset via [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V). 
+We used the UCMerced dataset for both training and testing. Please first download the dataset via [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V). 
 
 ## Pretrained weight
 All the models (X2/3/4) can be downloaded from [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V).
