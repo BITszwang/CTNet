@@ -57,7 +57,7 @@ cd metric_scripts
 python calculate_PSNR_SSIM.py
 ```
 
-Compute the evaluated results of each class in term of PSNR and SSIM, where the SR/HR paths can be edited in [calculate_PSNR_SSIM.py](codes/metric_scripts/calculate_PSNR_SSIM.py)
+Compute the evaluated results of each class in term of PSNR and SSIM, where the SR/HR paths can be edited in [calculate_PSNR_SSIM.py](codes/metric_scripts/calculate_each_class_PSNR_SSIM.py)
 
 ```
 cd metric_scripts 
