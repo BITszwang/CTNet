@@ -61,7 +61,7 @@ Compute the evaluated results of each class in term of PSNR and SSIM, where the 
 
 ```
 cd metric_scripts 
-python calculate_PSNR_SSIM.py
+python calculate_each_class_PSNR_SSIM.py
 ```
 
 ## Acknowledgements 
