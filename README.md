@@ -18,8 +18,12 @@ Clone or download this code and install aforementioned requirements
 cd codes
 ```
 
+
 ## Dataset
 We used the UCMerced dataset for both training and test. Please first download the dataset via [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V). 
+
+## Pretrained weight
+All the models (X2/3/4) can be downloaded from [Baidu Drive](https://pan.baidu.com/s/1XiFhJT9eExfebV3TSkjY2w) (key:912V).
 
 ## Train
 The train/val data pathes are set in [data/__init__.py](codes/data/__init__.py) 
@@ -31,7 +35,6 @@ python demo_train_ctnet.py --model=CTNET --dataset=UCMerced --scale=3 --patch_si
 # x2
 python demo_train_ctnet.py --model=CTNET --dataset=UCMerced --scale=2 --patch_size=96 --ext=img --save=CTNETx2_UCMerced
 ```
-
 
 
 ## Test 
@@ -54,7 +57,7 @@ cd metric_scripts
 python calculate_PSNR_SSIM.py
 ```
 
-Compute the evaluated results in term of PSNR and SSIM, where the SR/HR paths can be edited in [calculate_PSNR_SSIM.py](codes/metric_scripts/calculate_PSNR_SSIM.py)
+Compute the evaluated results of each class in term of PSNR and SSIM, where the SR/HR paths can be edited in [calculate_PSNR_SSIM.py](codes/metric_scripts/calculate_PSNR_SSIM.py)
 
 ```
 cd metric_scripts 
