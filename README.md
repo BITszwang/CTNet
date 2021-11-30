@@ -1,6 +1,6 @@
 # CTNet
-Official Pytorch implementation of the paper "[Contextual Transformation Network for Lightweight Remote Sensing Image Super-Resolution](https://github.com/BITszwang/CTNet/)".
-
+Official Pytorch implementation of the paper "[Contextual Transformation Network for Lightweight Remote Sensing Image Super-Resolution](https://github.com/BITszwang/CTNet/)"
+accepted by IEEE TGRS.
 ## Requirements
 - Python 3.7
 - Pytorch=1.5
@@ -65,5 +65,20 @@ cd metric_scripts
 python calculate_each_class_PSNR_SSIM.py
 ```
 
+
+## Citation 
+If you find this work helpful, please consider citing the following paper:
+``````
+@article{wang2021contextual,
+  title={Contextual Transformation Network for Lightweight Remote Sensing Image Super-Resolution},
+  author={Wang, Shunzhou and Zhou, Tianfei and Lu, Yao and Di, Huijun},
+  journal={IEEE Transactions on Geoscience and Remote Sensing},
+  year={2021},
+  pages={1-1}
+}
+``````
+
+
 ## Acknowledgements 
 This code is built on [HSENet (Pytorch)](https://github.com/Shaosifan/HSENet). We thank the authors for sharing the codes.  
+
