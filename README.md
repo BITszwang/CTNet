@@ -1,5 +1,5 @@
 # CTNet
-Official Pytorch implementation of the paper "[Contextual Transformation Network for Lightweight Remote Sensing Image Super-Resolution](https://github.com/BITszwang/CTNet/)"
+Official Pytorch implementation of the paper "[Contextual Transformation Network for Lightweight Remote Sensing Image Super-Resolution](https://ieeexplore.ieee.org/document/9632567)"
 accepted by IEEE TGRS.
 ## Requirements
 - Python 3.7
